@@ -1,0 +1,45 @@
+<!-- popup.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapSolve - Helps you all the way</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>SnapSolve - Helps you all the way</h1>
+    
+    <div class="image-container">
+      <div id="image-preview">
+        <p id="no-image">No image captured yet</p>
+        <img id="captured-image" src="" alt="Captured image" style="display: none;">
+      </div>
+      <button id="capture-btn" class="btn primary-btn">Capture Current Page</button>
+    </div>
+    
+    <div class="prompt-container">
+      <label for="prompt-input">Enter your prompt:</label>
+      <textarea id="prompt-input" rows="3" placeholder="Describe what you want to do with this image..."></textarea>
+    </div>
+    
+    <button id="process-btn" class="btn primary-btn" disabled>Process with Gemini</button>
+    
+    <div class="result-container">
+      <h2>Result</h2>
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processing with Gemini...</p>
+      </div>
+      <div id="result-output"></div>
+    </div>
+    
+    <div class="footer">
+      <p>Using Gemini 2.0 Flash | Made with ❤️ by Anish</p>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
