@@ -1,17 +1,3 @@
-// Copyright 2024 Google LLC
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     https://www.apache.org/licenses/LICENSE-2.0
-
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 export default {
   'A/V captions': {
     emoji: '👀',
@@ -43,12 +29,6 @@ with the timecode, text description of 10 words or less, and a list of objects \
 visible in the scene (with representative emojis).`
   },
 
-//   Haiku: {
-//     emoji: '🌸',
-//     prompt: `Generate a haiku for the video. Place each line of the haiku into an \
-// object sent to set_timecodes with the timecode of the line in the video. Make sure \
-// to follow the syllable count rules (5-7-5).`
-//   },
 
   Chart: {
     emoji: '📈',
