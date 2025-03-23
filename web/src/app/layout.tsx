@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Montserrat, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AccessibilityMenuWrapper from "@/components/Accessibility/AccessibiltyWrapper";
+import { VoiceNavigationDockComponent } from "@/components/voice-navigation-dock";
 import { AuthProvider } from "@/context/AuthContext";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -29,10 +31,13 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <Toaster />
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AccessibilityMenuWrapper>
+          <VoiceNavigationDockComponent />
+          <Toaster />
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </AccessibilityMenuWrapper>
       </body>
     </html>
   );
