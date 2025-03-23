@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, User, Mail, LayoutDashboard, ChevronLeft, ChevronRight, IndianRupee, Search, Handshake, Building, BadgeIndianRupee, BookUser, Album, GitCompare, GraduationCap, BookAIcon, Calendar, Brain } from 'lucide-react'
+import { Home, User, Mail, LayoutDashboard, ChevronLeft, ChevronRight, Handshake, Album, GitCompare, GraduationCap, BookAIcon, Calendar, Brain } from 'lucide-react'
 
 import { cn } from "@/lib/utils"
 import { navLinks, ownerNavLinks } from '@/lib/constants'

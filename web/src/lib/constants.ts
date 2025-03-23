@@ -51,4 +51,10 @@ export const navLinks = [
 
 export const ownerNavLinks = [
   { title: 'Home', url: '/' },
+  { title: 'About', url: '/about' },
+  { title: 'Dashboard', url: '/dashboard' },
+  { title: 'Search Listings', url: '/search' },
+  { title: 'Rent Tracker', url: '/rental' },
+  { title: 'List Property', url: '/list-property' },
+  { title: 'Listing Offers', url: '/offers' },
 ]
