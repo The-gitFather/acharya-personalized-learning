@@ -33,6 +33,8 @@ export default function AccessibilityMenuWrapper({
   const [areImagesHidden, setAreImagesHidden] = useState(false);
   const [isDyslexiaMode, setIsDyslexiaMode] = useState(false);
   const [areVideosHidden, setAreVideosHidden] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Load state from localStorage
   useEffect(() => {
@@ -91,24 +93,44 @@ export default function AccessibilityMenuWrapper({
     areVideosHidden,
   ]);
 
+  const handleOpenChange = (open) => {
+    setIsOpen(open);
+  };
+
   return (
     <div>
-      <Popover>
+      <Popover onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
-            className="fixed bottom-6 right-6 w-[60px] h-[60px] rounded-full p-3 z-50 hover:scale-[1.05]"
+            className={`fixed bottom-6 right-6 w-[60px] h-[60px] rounded-full p-3 z-50 bg-blue-600 hover:bg-blue-700 text-white ${
+              isOpen ? "animate-pulse" : ""
+            } transition-all duration-300 ease-in-out`}
             aria-label="Accessibility options"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{
+              transform: isHovered ? "scale(1.1)" : "scale(1)",
+              boxShadow: isHovered ? "0 0 15px rgba(37, 99, 235, 0.8)" : "0 0 5px rgba(0, 0, 0, 0.2)",
+            }}
           >
-            <Accessibility style={{ width: '25px', height: '25px' }} />
+            <Accessibility 
+              style={{ 
+                width: '25px', 
+                height: '25px',
+                transform: isHovered ? "rotate(15deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease-in-out"
+              }} 
+            />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 m-4">
+        <PopoverContent className="w-80 m-4 animate-fadeIn">
           <h2 className="text-lg font-semibold mb-4">Accessibility Options</h2>
           <div className="space-y-4">
             <Toggle
               aria-label="High contrast"
               pressed={isHighContrast}
               onPressedChange={setIsHighContrast}
+              className="transition-transform hover:scale-105"
             >
               High Contrast
             </Toggle>
@@ -117,6 +139,7 @@ export default function AccessibilityMenuWrapper({
               aria-label="Highlight links"
               pressed={isLinksHighlighted}
               onPressedChange={setIsLinksHighlighted}
+              className="transition-transform hover:scale-105"
             >
               <Link className="h-4 w-4 mr-2" />
               Highlight Links
@@ -165,6 +188,7 @@ export default function AccessibilityMenuWrapper({
               aria-label="Hide images"
               pressed={areImagesHidden}
               onPressedChange={setAreImagesHidden}
+              className="transition-transform hover:scale-105"
             >
               <ImageOff className="h-4 w-4 mr-2" />
               Hide Images
@@ -174,6 +198,7 @@ export default function AccessibilityMenuWrapper({
               aria-label="Dyslexia friendly"
               pressed={isDyslexiaMode}
               onPressedChange={setIsDyslexiaMode}
+              className="transition-transform hover:scale-105"
             >
               <BookOpen className="h-4 w-4 mr-2" />
               Dyslexia Friendly
@@ -183,6 +208,7 @@ export default function AccessibilityMenuWrapper({
               aria-label="Hide videos"
               pressed={areVideosHidden}
               onPressedChange={setAreVideosHidden}
+              className="transition-transform hover:scale-105"
             >
               <VideoOff className="h-4 w-4 mr-2" />
               Hide Videos
@@ -230,6 +256,25 @@ export default function AccessibilityMenuWrapper({
           font-family: "Open Dyslexic", sans-serif;
           word-spacing: 0.35em;
           letter-spacing: 0.12em;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        
+        .animate-pulse {
+          animation: pulse 1.5s infinite;
         }
       `}</style>
     </div>

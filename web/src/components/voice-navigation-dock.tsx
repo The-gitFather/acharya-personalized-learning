@@ -10,9 +10,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey!);
 
-// console.log(apiKey)
-
-
 const speechSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -45,6 +42,7 @@ export function VoiceNavigationDockComponent() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [isHovered, setIsHovered] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const router = useRouter();
@@ -113,7 +111,6 @@ export function VoiceNavigationDockComponent() {
       recognitionRef.current.stop();
       setIsListening(false);
       handleVoiceCommand(transcript);
-      // setFeedback("Listening stopped.");
     }
   };
 
@@ -160,7 +157,6 @@ export function VoiceNavigationDockComponent() {
     `;
 
     try {
-
       // Generate content using the model
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -203,12 +199,10 @@ export function VoiceNavigationDockComponent() {
         }
       } else {
         setFeedback(`I heard: ${command}. This is not a recognized command.`);
-        // speak(`I heard: ${command}. This is not a recognized command.`)
       }
     } catch (error) {
       console.error("Error processing voice command:", error);
       setFeedback("Sorry, I couldn't process that command.");
-      // speak("Sorry, I couldn't process that command.")
     }
   };
 
@@ -222,29 +216,46 @@ export function VoiceNavigationDockComponent() {
       {/* Trigger Button */}
       <PopoverTrigger asChild>
         <Button
-          className="fixed bottom-[100px] right-6 w-[60px] h-[60px] rounded-full p-2 z-[100] hover:scale-[1.05]"
+          className={`fixed bottom-[100px] right-6 w-[60px] h-[60px] rounded-full p-2 z-[100] bg-blue-600 hover:bg-blue-700 text-white transition-all duration-300 ease-in-out ${
+            isListening ? "animate-pulse-ring" : ""
+          }`}
           aria-label={isDockOpen ? "Close voice navigation" : "Open voice navigation"}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{
+            transform: isHovered ? "scale(1.1)" : "scale(1)",
+            boxShadow: isHovered ? "0 0 15px rgba(37, 99, 235, 0.8)" : "0 0 5px rgba(0, 0, 0, 0.2)",
+          }}
         >
           {isDockOpen ? (
-            <X className="w-8 h-8" />
+            <X className="w-8 h-8 animate-spin-once" />
           ) : (
-            <Mic className="w-8 h-8" />
+            <Mic 
+              className="w-8 h-8" 
+              style={{ 
+                transform: isHovered ? "rotate(15deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease-in-out"
+              }}
+            />
           )}
         </Button>
       </PopoverTrigger>
 
       {/* Popover Content */}
       <PopoverContent
-        className="w-[350px] bg-background border border-border rounded-lg shadow-lg z-[1000]"
+        className="w-[350px] bg-background border border-border rounded-lg shadow-lg z-[1000] animate-slideIn"
         align="end"
         side="top"
       >
         <div className="p-4">
           <h2 className="text-2xl font-bold mb-4">Voice Navigation</h2>
           <div className="flex items-center justify-between mb-4">
-            <Button onClick={toggleListening}>
+            <Button 
+              onClick={toggleListening}
+              className={`transition-all duration-300 ease-in-out ${isListening ? "bg-red-500 hover:bg-red-600" : "bg-blue-600 hover:bg-blue-700"}`}
+            >
               {isListening ? (
-                <MicOff className="mr-2 h-4 w-4" />
+                <MicOff className="mr-2 h-4 w-4 animate-pulse" />
               ) : (
                 <Mic className="mr-2 h-4 w-4" />
               )}
@@ -254,17 +265,68 @@ export function VoiceNavigationDockComponent() {
               {isListening ? "Listening..." : "Click to start"}
             </span>
           </div>
-          <div className="bg-muted p-4 rounded-md mb-4 min-h-[100px]">
+          <div className="bg-muted p-4 rounded-md mb-4 min-h-[100px] transition-all duration-300 ease-in-out">
             <p className="font-semibold">Transcript:</p>
-            <p>{transcript}</p>
+            <p className={isListening ? "animate-typing" : ""}>{transcript}</p>
           </div>
-          <div className="bg-muted p-4 rounded-md">
+          <div className="bg-muted p-4 rounded-md transition-all duration-300 ease-in-out">
             <p className="font-semibold">System Feedback:</p>
-            <p>{feedback}</p>
+            <p className="animate-fadeIn">{feedback}</p>
           </div>
-
         </div>
       </PopoverContent>
+
+      <style jsx global>{`
+        @keyframes pulse-ring {
+          0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+          70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        
+        .animate-pulse-ring {
+          animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes spin-once {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .animate-spin-once {
+          animation: spin-once 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+          0% { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes typing {
+          0% { border-right: 2px solid transparent; }
+          50% { border-right: 2px solid currentColor; }
+          100% { border-right: 2px solid transparent; }
+        }
+        
+        .animate-typing {
+          border-right: 2px solid currentColor;
+          animation: typing 1s step-end infinite;
+          display: inline-block;
+          padding-right: 4px;
+        }
+      `}</style>
     </Popover>
   );
-};
+}
