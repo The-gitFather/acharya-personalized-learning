@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation"
 import { FaPlus, FaTrash, FaChevronRight, FaLightbulb, FaHeartbeat, FaGraduationCap, FaCalculator, FaVideo, FaBook } from "react-icons/fa"
 import { useAuth } from "@/context/AuthContext"
 
-const genAI = new GoogleGenerativeAI("AIzaSyCKCRR56-u5ENjCQ0IfwefNENVslKxKRoY")
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY as string);
 
 // Define the schema for research outline
 const researchSchema = {

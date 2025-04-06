@@ -4,8 +4,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-
-  apiKey: "AIzaSyBDP7vR2-jJvZ8mPkilAb9Qot5UPuTWO1g",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "nfc3-git-push--f-657a0.firebaseapp.com",
   projectId: "nfc3-git-push--f-657a0",
   storageBucket: "nfc3-git-push--f-657a0.appspot.com",

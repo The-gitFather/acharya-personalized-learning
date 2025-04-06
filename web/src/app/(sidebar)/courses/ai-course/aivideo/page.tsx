@@ -41,7 +41,7 @@ const genAI = new GoogleGenerativeAI(apiKey!);
 // import { Navbar } from "@/components/navbar";
 
 const groq = new Groq({
-    apiKey: "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",
+    apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
     dangerouslyAllowBrowser: true,
 });
 const questionsSchema = {
@@ -179,7 +179,7 @@ export default function CoursePage() {
     const [videoSummary, setVideoSummary] = useState<string>("");
     const [questions, setQuestions] = useState<Question[]>([]);
 
-    const API_KEY: string = "AIzaSyBrdsClFkrQokGYbdXCVSbUTtcOanxUFBM"; // Replace with your actual API key
+    const API_KEY: string = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY as string;
 
     const handleSearch = async (titleSelected: any): Promise<void> => {
         console.log(titleSelected);

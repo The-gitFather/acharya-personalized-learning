@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let imageData = null;
 
   // API key (in a real extension, this should be securely stored or fetched from an authenticated backend)
-  const API_KEY = "AIzaSyDecvZH39UXP4k7WPBTffGJmVoinOGKrBc";
+  const API_KEY = process.env.API_KEY;
+;
 
   // Capture screenshot of current tab
   captureBtn.addEventListener('click', () => {
