@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/context/AuthContext";
-import { ChevronDown, ChevronUp, CheckSquare, Square } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckSquare, Square, Mail, User, School } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ProfileCard from './ProfileCard';
 
 // Initialize Google Generative AI with the API key
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
@@ -293,6 +294,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 px-12">
+      <ProfileCard user={user} />
       <div className="w-full mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Your Goals</h1>
 
