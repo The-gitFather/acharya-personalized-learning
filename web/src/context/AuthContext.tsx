@@ -23,12 +23,14 @@ interface UserData {
     photoURL: string | null;
     onboardingCompleted: boolean;
     onboardingAnswers: string[];
+    goals: string[];
 }
 
 // Extended user type that combines Firebase User with our additional data
 interface ExtendedUser extends User {
     onboardingCompleted: boolean;
     onboardingAnswers: string[];
+    goals: string[];
 }
 
 interface AuthContextType {
@@ -39,6 +41,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     updateOnboardingAnswers: (answers: string[]) => Promise<void>;
+    updateUserGoals: (goals: string[]) => Promise<void>;
     completeOnboarding: () => Promise<void>;
     uploadProfileImage: (file: File) => Promise<string>;
     updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>;
@@ -64,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: firebaseUser.photoURL,
             onboardingCompleted: false,
             onboardingAnswers: getDefaultOnboardingAnswers(),
+            goals: [],
         };
 
         if (!userSnap.exists()) {
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...firebaseUser,
             onboardingCompleted: userData.onboardingCompleted,
             onboardingAnswers: userData.onboardingAnswers,
+            goals: userData.goals || [], // Ensure goals is initialized
         } as ExtendedUser;
     };
 
@@ -187,6 +192,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const updateUserGoals = async (goals: string[]) => {
+        if (!user) return;
+
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            goals: goals
+        });
+
+        // Get the current Firebase user and create an updated extended user
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            const updatedUser = await createOrUpdateUserDocument(currentUser);
+            setUser(updatedUser);
+        }
+    };
+
     const completeOnboarding = async () => {
         if (!user) return;
 
@@ -220,6 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithGoogle,
         logout,
         updateOnboardingAnswers,
+        updateUserGoals,
         completeOnboarding,
         uploadProfileImage,
         updateUserProfile

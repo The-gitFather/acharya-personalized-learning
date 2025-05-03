@@ -39,6 +39,15 @@ export const steps = [
   }
 ];
 
+export const goalOptions = [
+  "Web Development",
+  "Data Science",
+  "Machine Learning",
+  "Mobile App Development",
+  "Game Development",
+  "Cloud Computing",
+  "Cybersecurity",
+]
 
 export const navLinks = [
   // { title: 'Home', url: '/' },
@@ -46,7 +55,7 @@ export const navLinks = [
   { title: 'Courses', url: '/courses' },
   { title: 'Study Material', url: '/study-material' },
   { title: 'Kanban', url: '/kanban' },
-  {title: 'Doubts', url: '/doubts'}
+  { title: 'Doubts', url: '/doubts' }
 ]
 
 export const ownerNavLinks = [
