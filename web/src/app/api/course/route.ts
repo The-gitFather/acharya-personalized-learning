@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-// It's better to use environment variable for API key
 const API_KEY = process.env.SERP_API_KEY || "555e1650dcfeb69fdfe704d298b0396b66172413026edf642b954be707bfaa50";
 
 export async function GET(request: Request) {
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("SerpAPI error:", errorText);
-      
+
       return NextResponse.json(
         { error: "Failed to fetch search results" },
         { status: response.status }

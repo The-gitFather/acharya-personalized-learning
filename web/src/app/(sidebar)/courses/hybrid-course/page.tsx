@@ -1,12 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  GoogleMap,
-  LoadScript,
-  Marker,
-  InfoWindow,
-} from "@react-google-maps/api";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,8 +14,26 @@ import {
   User,
   Mail,
 } from "lucide-react";
-import "leaflet/dist/leaflet.css"; // Import Leaflet CSS
-// import { Navbar } from "@/components/navbar";
+import "leaflet/dist/leaflet.css";
+import dynamic from "next/dynamic";
+
+// Dynamically import Leaflet components with no SSR to avoid window not defined errors
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Popup),
+  { ssr: false }
+);
 
 const data = [
   {
@@ -124,16 +136,32 @@ const data = [
   },
 ];
 
-const containerStyle = {
-  width: "100%",
-  height: "400px",
+// Custom icon for markers
+const customIcon = () => {
+  // Need to load Leaflet only on client-side
+  if (typeof window !== "undefined") {
+    // Dynamically import Leaflet's icon
+    const L = require("leaflet");
+    return L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
+      iconSize: [40, 40],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+    });
+  }
+  return null;
 };
 
 export default function HybridCoursesPage() {
   const [filter, setFilter] = useState("");
   const [selectedEmail, setSelectedEmail] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // Set mapReady to true when component mounts (client-side only)
+  useEffect(() => {
+    setMapReady(true);
+  }, []);
 
   const filteredData = data.filter((course) =>
     Object.values(course).some((value) =>
@@ -150,71 +178,61 @@ export default function HybridCoursesPage() {
     setIsModalOpen(false);
   };
 
-  const handleMarkerClick = (course) => {
-    setSelectedCourse(course);
-  };
-
   return (
     <div className="container mx-auto py-10 px-6">
       {/* <Navbar></Navbar> */}
       <h1 className="text-3xl font-bold mb-6 pt-24">Hybrid Courses</h1>
 
       <div className="mb-6 h-[400px] w-full">
-        <LoadScript googleMapsApiKey="AIzaSyAuEgY8MYzygH6D4ilw2HC7SBbV-UCM4wo">
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={{ lat: 30.67, lng: 76.72 }}
+        {mapReady && (
+          <MapContainer
+            center={[30.67, 76.72]}
             zoom={11}
+            style={{ height: "400px", width: "100%" }}
           >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
             {filteredData.map((course) => (
               <Marker
                 key={course.id}
-                position={{ lat: course.lat, lng: course.lng }}
-                icon={{
-                  url: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
-                  scaledSize: { width: 40, height: 40 }, // Adjust the size of the icon
-                }}
-                onClick={() => handleMarkerClick(course)}
-              />
-            ))}
-            {selectedCourse && (
-              <InfoWindow
-                position={{ lat: selectedCourse.lat, lng: selectedCourse.lng }}
-                onCloseClick={() => setSelectedCourse(null)}
+                position={[course.lat, course.lng]}
+                icon={customIcon()}
               >
-                <div>
-                  <h3>{selectedCourse?.course}</h3>
-                  <p>
-                    <strong>District:</strong> {selectedCourse?.district}
-                  </p>
-                  <p>
-                    <strong>Training Partner:</strong>{" "}
-                    {selectedCourse?.trainingPartner}
-                  </p>
-                  <p>
-                    <strong>Training Centre:</strong>{" "}
-                    {selectedCourse?.trainingCentre}
-                  </p>
-                  <p>
-                    <strong>Scheme Name:</strong> {selectedCourse?.schemeName}
-                  </p>
-                  <p>
-                    <strong>Sector:</strong> {selectedCourse?.sector}
-                  </p>
-                  <p>
-                    <strong>Start Date:</strong> {selectedCourse?.startDate}
-                  </p>
-                  <p>
-                    <strong>Start Time:</strong> {selectedCourse?.startTime}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {selectedCourse?.email}
-                  </p>
-                </div>
-              </InfoWindow>
-            )}
-          </GoogleMap>
-        </LoadScript>
+                <Popup>
+                  <div>
+                    <h3>{course.course}</h3>
+                    <p>
+                      <strong>District:</strong> {course.district}
+                    </p>
+                    <p>
+                      <strong>Training Partner:</strong> {course.trainingPartner}
+                    </p>
+                    <p>
+                      <strong>Training Centre:</strong> {course.trainingCentre}
+                    </p>
+                    <p>
+                      <strong>Scheme Name:</strong> {course.schemeName}
+                    </p>
+                    <p>
+                      <strong>Sector:</strong> {course.sector}
+                    </p>
+                    <p>
+                      <strong>Start Date:</strong> {course.startDate}
+                    </p>
+                    <p>
+                      <strong>Start Time:</strong> {course.startTime}
+                    </p>
+                    <p>
+                      <strong>Email:</strong> {course.email}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
       </div>
 
       <div className="mb-6">
