@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/AuthContext"
+import { Goal } from "@/context/AuthContext" // Import the Goal interface 
 import { Upload } from "lucide-react"
-import { steps, goalOptions } from "@/lib/constants"
+import { steps, goalOptions, goalTitles } from "@/lib/constants"
 import { BackgroundGradientAnimation } from "@/components/background-gradient-animation"
 
 export function OnboardingForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<string[]>([])
-  const [userGoals, setUserGoals] = useState<string[]>([])
+  const [selectedGoalTitles, setSelectedGoalTitles] = useState<string[]>([])
   const [profileImage, setProfileImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const router = useRouter()
@@ -31,10 +32,20 @@ export function OnboardingForm() {
       setAnswers(existingAnswers)
     }
 
-    if (user?.goals) {
-      setUserGoals(user.goals)
+    if (user?.goals && Array.isArray(user.goals)) {
+      console.log("Retrieved user goals:", user.goals);
+
+      // Extract just the titles from the goals array
+      const existingGoalTitles = user.goals.map(goal => {
+        if (typeof goal === 'object' && goal !== null && 'title' in goal) {
+          return goal.title;
+        }
+        return typeof goal === 'string' ? goal : '';
+      }).filter(title => title !== '');
+
+      setSelectedGoalTitles(existingGoalTitles);
     }
-  }, [])
+  }, [user])
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -74,8 +85,14 @@ export function OnboardingForm() {
         await updateOnboardingAnswers(answers);
       } else if (currentStep === steps.length + 1) {
         // This is the goals step
-        console.log("User goals:", userGoals)
-        await updateUserGoals(userGoals);
+        // Convert selected titles to full goal objects with roadmaps
+        const selectedFullGoals = goalOptions.filter(goal =>
+          selectedGoalTitles.includes(goal.title)
+        );
+
+        console.log("Selected goals with roadmaps:", selectedFullGoals);
+        // Make sure we're sending the complete goal objects with roadmaps
+        await updateUserGoals(selectedFullGoals);
       } else {
         await updateOnboardingAnswers(answers);
       }
@@ -110,11 +127,11 @@ export function OnboardingForm() {
     setAnswers(newAnswers)
   }
 
-  const toggleGoalSelection = (goal: string) => {
-    if (userGoals.includes(goal)) {
-      setUserGoals(userGoals.filter(g => g !== goal))
+  const toggleGoalSelection = (goalTitle: string) => {
+    if (selectedGoalTitles.includes(goalTitle)) {
+      setSelectedGoalTitles(selectedGoalTitles.filter(title => title !== goalTitle))
     } else {
-      setUserGoals([...userGoals, goal])
+      setSelectedGoalTitles([...selectedGoalTitles, goalTitle])
     }
   }
 
@@ -189,6 +206,13 @@ export function OnboardingForm() {
 
   // Goals selection step
   if (currentStep === steps.length + 1) {
+    // Preview the full goal objects with roadmaps that will be saved
+    const selectedFullGoals = goalOptions.filter(goal =>
+      selectedGoalTitles.includes(goal.title)
+    );
+
+    console.log("Preview of selected goals with roadmaps:", selectedFullGoals);
+
     return (
       <div className="space-y-8 w-full max-w-4xl mx-auto p-8 h-screen rounded-lg mt-2 z-50">
         <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -205,17 +229,17 @@ export function OnboardingForm() {
             What are your goals? (Select all that apply)
           </Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {goalOptions.map((goal) => (
+            {goalTitles.map((title) => (
               <Button
-                key={goal}
-                onClick={() => toggleGoalSelection(goal)}
-                variant={userGoals.includes(goal) ? "default" : "outline"}
-                className={`text-lg py-6 transition-all duration-300 ease-in-out transform hover:scale-105 ${userGoals.includes(goal)
-                  ? "bg-blue-500 hover:bg-blue-600 text-white"
-                  : "hover:bg-blue-100 hover:border-blue-500"
+                key={title}
+                onClick={() => toggleGoalSelection(title)}
+                variant={selectedGoalTitles.includes(title) ? "default" : "outline"}
+                className={`text-lg py-6 transition-all duration-300 ease-in-out transform hover:scale-105 ${selectedGoalTitles.includes(title)
+                    ? "bg-blue-500 hover:bg-blue-600 text-white"
+                    : "hover:bg-blue-100 hover:border-blue-500"
                   }`}
               >
-                {goal}
+                {title}
               </Button>
             ))}
           </div>
@@ -229,7 +253,7 @@ export function OnboardingForm() {
           </button>
           <Button
             onClick={handleNext}
-            disabled={userGoals.length === 0}
+            disabled={selectedGoalTitles.length === 0}
             className="text-base px-8 py-3 bg-blue-500 hover:bg-blue-600 transition-all duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Complete
@@ -263,8 +287,8 @@ export function OnboardingForm() {
               onClick={() => handleSelectChange(option)}
               variant={answers[currentStep - 1] === option ? "default" : "outline"}
               className={`text-lg py-6 transition-all duration-300 ease-in-out transform hover:scale-105 ${answers[currentStep - 1] === option
-                ? "bg-blue-500 hover:bg-blue-600 text-white"
-                : "hover:bg-blue-100 hover:border-blue-500"
+                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                  : "hover:bg-blue-100 hover:border-blue-500"
                 }`}
             >
               {option}

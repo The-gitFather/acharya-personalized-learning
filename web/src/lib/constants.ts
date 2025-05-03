@@ -39,15 +39,40 @@ export const steps = [
   }
 ];
 
+// Define the goal options with titles and roadmap topics
 export const goalOptions = [
-  "Web Development",
-  "Data Science",
-  "Machine Learning",
-  "Mobile App Development",
-  "Game Development",
-  "Cloud Computing",
-  "Cybersecurity",
+  {
+    title: "Web Development",
+    roadmap: ["Frontend", "Backend", "DevOps", "Databases", "API Development"]
+  },
+  {
+    title: "Data Science",
+    roadmap: ["Data Analysis", "Data Visualization", "Machine Learning Basics", "Statistical Methods", "Big Data Technologies"]
+  },
+  {
+    title: "Machine Learning",
+    roadmap: ["Python Programming", "Neural Networks", "Natural Language Processing", "Computer Vision", "Reinforcement Learning"]
+  },
+  {
+    title: "Mobile App Development",
+    roadmap: ["Native iOS", "Native Android", "Cross-Platform Frameworks", "UI/UX Design", "App Performance"]
+  },
+  {
+    title: "Game Development",
+    roadmap: ["Game Engines", "2D/3D Graphics", "Game Physics", "Multiplayer Systems", "Game Design"]
+  },
+  {
+    title: "Cloud Computing",
+    roadmap: ["AWS/Azure/GCP", "Serverless", "Containers", "Infrastructure as Code", "Cloud Security"]
+  },
+  {
+    title: "Cybersecurity",
+    roadmap: ["Network Security", "Ethical Hacking", "Cryptography", "Security Analysis", "Incident Response"]
+  },
 ]
+
+// Export just the titles for UI display purposes
+export const goalTitles = goalOptions.map(goal => goal.title);
 
 export const navLinks = [
   // { title: 'Home', url: '/' },

@@ -333,7 +333,7 @@ export default function CoursePage() {
                         <div className="mt-8">
                             <Card className="rounded-3xl shadow-xl bg-white">
                                 <div className="flex items-center justify-between py-6 px-8">
-                                    <h1 className="text-2xl font-bold text-purple-800">{selectedTitle}</h1>
+                                    <h1 className="text-2xl font-bold text-purple-800">{title}</h1>
                                     <div className="flex items-center gap-4">
                                         <Progress value={33} className="w-32 bg-purple-200" />
                                         <Button variant="ghost" size="icon" className="text-purple-600 hover:text-purple-800 hover:bg-purple-100">

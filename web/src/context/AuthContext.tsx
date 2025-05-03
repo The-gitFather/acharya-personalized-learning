@@ -16,6 +16,12 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage } from '@/lib/firebase';
 import { steps } from '@/lib/constants';
 
+// Goal type to represent the structured goal data
+export interface Goal {
+    title: string;
+    roadmap: string[];
+}
+
 // Separate interface for the additional user data we store in Firestore
 interface UserData {
     email: string | null;
@@ -23,14 +29,14 @@ interface UserData {
     photoURL: string | null;
     onboardingCompleted: boolean;
     onboardingAnswers: string[];
-    goals: string[];
+    goals: Goal[];
 }
 
 // Extended user type that combines Firebase User with our additional data
 interface ExtendedUser extends User {
     onboardingCompleted: boolean;
     onboardingAnswers: string[];
-    goals: string[];
+    goals: Goal[];
 }
 
 interface AuthContextType {
@@ -41,7 +47,7 @@ interface AuthContextType {
     signInWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     updateOnboardingAnswers: (answers: string[]) => Promise<void>;
-    updateUserGoals: (goals: string[]) => Promise<void>;
+    updateUserGoals: (goals: Goal[]) => Promise<void>;
     completeOnboarding: () => Promise<void>;
     uploadProfileImage: (file: File) => Promise<string>;
     updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>;
@@ -77,12 +83,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const userData = userSnap.exists() ? userSnap.data() as UserData : defaultData;
 
+        // Ensure goals are properly structured
+        const normalizedGoals = Array.isArray(userData.goals) ?
+            userData.goals.map(goal => {
+                // Handle both the case where goals are already in the right format
+                // and where they might be just strings from before
+                if (typeof goal === 'string') {
+                    return { title: goal, roadmap: [] };
+                }
+                return goal;
+            }) : [];
+
         // Combine Firebase User with our additional data
         return {
             ...firebaseUser,
             onboardingCompleted: userData.onboardingCompleted,
             onboardingAnswers: userData.onboardingAnswers,
-            goals: userData.goals || [], // Ensure goals is initialized
+            goals: normalizedGoals,
         } as ExtendedUser;
     };
 
@@ -192,12 +209,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const updateUserGoals = async (goals: string[]) => {
+    const updateUserGoals = async (goals: Goal[]) => {
         if (!user) return;
+
+        console.log("Storing goals in Firebase:", goals);
+
+        // Ensure goals are properly formatted before storing
+        const formattedGoals = goals.map(goal => ({
+            title: goal.title,
+            roadmap: goal.roadmap || []
+        }));
 
         const userRef = doc(db, 'users', user.uid);
         await updateDoc(userRef, {
-            goals: goals
+            goals: formattedGoals
         });
 
         // Get the current Firebase user and create an updated extended user
