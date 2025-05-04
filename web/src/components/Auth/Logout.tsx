@@ -25,7 +25,7 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({ className }) => {
         <Button
             variant="destructive"
             onClick={handleLogout}
-            className={`${className} bg-red-600 hover:bg-red-700`}
+            className={`${className} bg-transparent`}
         >
             <LogOut size={16} />
             Logout

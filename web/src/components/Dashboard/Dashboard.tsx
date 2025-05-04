@@ -216,7 +216,7 @@ export default function Dashboard() {
       });
 
       // Navigate to the AI video page with the generated content
-      router.push(`/ai-course/aivideo?title=${encodeURIComponent(goalTitle)}&data=${encodeURIComponent(responseGemini)}`);
+      router.push(`/courses/ai-course/aivideo?title=${encodeURIComponent(goalTitle)}&data=${encodeURIComponent(responseGemini)}`);
     } catch (error) {
       console.error("Error generating research outline:", error);
       alert("Failed to generate course content. Please try again.");

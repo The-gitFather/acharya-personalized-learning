@@ -1,281 +1,78 @@
+// app/page.tsx
 "use client";
-
-import React, { useState, useCallback, useRef } from "react";
-import Webcam from "react-webcam";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import {
-  Calendar,
-  Video,
-  Share2,
-  Settings,
-  Send,
-  Paperclip,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useState, useCallback } from 'react';
+import CameraPreview from '@/components/gemini-realtime-avatar/CameraPreview';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+// import AITalkingAgent from '@/components/gemini-realtime-avatar/AudioAgent';
+import { Sparkle, Star } from 'lucide-react';
+import { Twinkle_Star } from 'next/font/google';
 
-// Import regeneratorRuntime polyfill
-import "regenerator-runtime/runtime";
-// import { Navbar } from "@/components/navbar";
+// Helper function to create message components
+const HumanMessage = ({ text }: { text: string }) => (
+  <div className="flex gap-3 items-start">
+    <Avatar className="h-8 w-8">
+      <AvatarImage src="/avatars/human.png" alt="Human" />
+      <AvatarFallback>H</AvatarFallback>
+    </Avatar>
+    <div className="flex-1 space-y-2">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-medium text-zinc-900">You</p>
+      </div>
+      <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-800">
+        {text}
+      </div>
+    </div>
+  </div>
+);
 
-const genAI = new GoogleGenerativeAI("AIzaSyCKCRR56-u5ENjCQ0IfwefNENVslKxKRoY");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const GeminiMessage = ({ text }: { text: string }) => (
+  <div className="flex gap-3 items-start">
+    <Avatar className="h-8 w-8 bg-blue-600 flex justify-center items-center">
+      {/* <AvatarImage src="/avatars/gemini.png" alt="Gemini" /> */}
+      <Sparkle className='text-white' fill='white' />
+      {/* <AvatarFallback>AI</AvatarFallback> */}
+    </Avatar>
+    <div className="flex-1 space-y-2">
+      <div className="flex items-center gap-2">
+        <p className="text-sm font-medium text-zinc-900">आचार्य</p>
+      </div>
+      <div className="rounded-lg bg-white border border-zinc-200 px-3 py-2 text-sm text-zinc-800">
+        {text}
+      </div>
+    </div>
+  </div>
+);
 
-export default function VideoCall() {
-  const [showVideo, setShowVideo] = useState(false);
-  const [speechText, setSpeechText] = useState("");
-  const [listening, setListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [conversationHistory, setConversationHistory] = useState("");
-  const recognitionRef = useRef<any>(null);
-  const synthesisRef = useRef(
-    typeof window !== "undefined" ? window.speechSynthesis : null
-  );
+export default function Home() {
+  const [messages, setMessages] = useState<{ type: 'human' | 'gemini', text: string }[]>([]);
 
-  if (typeof window !== "undefined" && !("webkitSpeechRecognition" in window)) {
-    return <span>Browser doesn&apos;t support speech recognition.</span>;
-  }
-
-  const startListening = () => {
-    if (synthesisRef.current?.speaking) {
-      synthesisRef.current.cancel();
-    }
-
-    setShowVideo(false);
-
-    if (!recognitionRef.current) {
-      const recognition = new window.webkitSpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = "en-US";
-
-      recognition.onresult = (event: any) => {
-        const transcriptArray = Array.from(event.results)
-          .map((result) => result[0])
-          .map((result) => result.transcript)
-          .join("");
-        setTranscript(transcriptArray);
-        setConversationHistory(
-          (prevHistory) => prevHistory + " User: " + transcriptArray
-        );
-      };
-
-      recognition.onerror = (event : any) => {
-        console.error("Speech recognition error", event.error);
-      };
-
-      recognitionRef.current = recognition;
-    }
-
-    recognitionRef?.current?.start();
-    setListening(true);
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setListening(false);
-  };
-
-  const handleGenerate = useCallback(() => {
-    const prompt = `
-    You are an AI assistant designed to clear users' doubts in an interactive and engaging manner.
-
-    Instructions:
-    The user will ask questions related to a topic or field.
-    The user will ask questions related to a topic or field.
-    Provide clear, concise, and helpful explanations.
-    Keep responses friendly, engaging, and polite.
-    Do not include your name or any specific user information. Use ${conversationHistory} to maintain context.
-    Keep the conversation continuous without repetitive greetings.
-    Use simple and easy-to-understand language.
-    If needed, ask follow-up questions to clarify the user's doubt further.
-    keep the responses short and concise.
-
-    Context of the conversation so far:
-    ${conversationHistory}
-    ${transcript}
-
-    Please follow the instructions above during the conversation.`;
-
-    model
-      .generateContent(prompt)
-      .then((result) => {
-        const responseGemini = result.response
-          .text()
-          .replace(/\bjson\b/gi, "")
-          .replace(/\\\`/g, "");
-        setShowVideo(true);
-        setSpeechText(responseGemini);
-
-        setConversationHistory(
-          (prevHistory) => `${prevHistory}\nAI: ${responseGemini}`
-        );
-
-        const utterance = new SpeechSynthesisUtterance(responseGemini);
-        utterance.onend = () => {
-          setShowVideo(false);
-        };
-        utterance.onstart = () => {
-          if (recognitionRef.current) {
-            recognitionRef.current.stop();
-          }
-        };
-        synthesisRef.current?.speak(utterance);
-      })
-      .catch((error) => {
-        console.error("Error generating text:", error);
-      });
-  }, [transcript, conversationHistory]);
+  const handleTranscription = useCallback((transcription: string) => {
+    setMessages(prev => [...prev, { type: 'gemini', text: transcription }]);
+  }, []);
 
   return (
     <>
-      <div className="min-h-screen bg-background pt-20">
-        <div className="container mx-auto p-4">
-          <Card className="w-full">
-            <CardHeader className="border-b p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                    <Calendar className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">
-                      Weekly Mock Interview [Internal]
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      November 06, 2024 | 11:00 AM
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 rounded-full bg-red-100 px-3 py-1">
-                    <span className="h-2 w-2 rounded-full bg-red-500" />
-                    <span className="text-sm text-red-500">
-                      Recording in Progress...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-[1fr,300px]">
-                <div className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                      {!showVideo && (
-                        <img
-                          src="/still.png"
-                          alt="Video Call"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      {showVideo && (
-                        <video
-                          src="/Mentor.mp4"
-                          autoPlay
-                          loop
-                          muted
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                      <Webcam
-                        className="w-full h-full object-cover"
-                        audio={false}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-4 p-4 border-t mt-4">
-                    <Button
-                      onClick={startListening}
-                      disabled={listening}
-                      className={`bg-green-500 hover:bg-green-700 text-white rounded-full px-4 py-2 transition-all duration-300 ${
-                        listening ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      Start Listening
-                    </Button>
+      <h1 className="text-4xl font-bold text-zinc-800 p-8 pb-0">
+      आचार्य - Live AI Avatar Doubt Solving
+      </h1>
+      <div className="flex gap-8 p-8">
+        <CameraPreview onTranscription={handleTranscription} />
+        {/* <AITalkingAgent onTranscription={handleTranscription} /> */}
 
-                    <Button
-                      onClick={stopListening}
-                      disabled={!listening}
-                      className={`bg-red-500 hover:bg-red-700 text-white rounded-full px-4 py-2 transition-all duration-300 ${
-                        !listening ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      Stop Listening
-                    </Button>
-
-                    <Button
-                      onClick={handleGenerate}
-                      className={`bg-blue-500 hover:bg-blue-700 text-white rounded-full px-4 py-2 transition-all duration-300`}
-                    >
-                      Converse
-                    </Button>
-                  </div>
-                </div>
-                <div className="border-l">
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold mb-2">Participants (2)</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Avatar>
-                          <AvatarImage src="/avatar1.jpg" />
-                          <AvatarFallback>JD</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">Jacob Jones</p>
-                          <p className="text-xs text-muted-foreground">Host</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar>
-                          <AvatarImage src="/avatar2.jpg" />
-                          <AvatarFallback>YS</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">You</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <ScrollArea className="h-[400px] p-4">
-                    <div className="space-y-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          Transcript:
-                        </p>
-                        <p className="text-sm">{transcript}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          History:
-                        </p>
-                        <p className="text-sm whitespace-pre-wrap">
-                          {conversationHistory}
-                        </p>
-                      </div>
-                    </div>
-                  </ScrollArea>
-                  <div className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Paperclip className="h-6 w-6 text-muted-foreground" />
-                      <Input placeholder="Add a note..." />
-                      <Button variant="outline">
-                        <Send className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="w-[640px] ">
+          <ScrollArea className="h-[540px] p-6">
+            <div className="space-y-6">
+              <GeminiMessage text="Hi! I'm Gemini. I can see and hear you. Let's chat!" />
+              {messages.map((message, index) => (
+                message.type === 'human' ? (
+                  <HumanMessage key={`msg-${index}`} text={message.text} />
+                ) : (
+                  <GeminiMessage key={`msg-${index}`} text={message.text} />  
+                )
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </>
