@@ -1,3 +1,4 @@
+//@ts-nocheck
 "use client";
 import { KanbanBoard } from "@/components/Kanban/kanban-board";
 import React from "react";

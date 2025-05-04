@@ -1,6 +1,6 @@
 "use client"
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Whiteboard } from '@/components/Whiteboard-updated/Whiteboard';
+import { Whiteboard } from '@/components/Whiteboard';
 
 export default function Home() {
   return (
