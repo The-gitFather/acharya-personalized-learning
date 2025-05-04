@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
+import { icon } from "leaflet"; // Import Leaflet's icon function directly
 
 // Dynamically import Leaflet components with no SSR to avoid window not defined errors
 const MapContainer = dynamic(
@@ -138,11 +139,9 @@ const data = [
 
 // Custom icon for markers
 const customIcon = () => {
-  // Need to load Leaflet only on client-side
+  // Need to check if window is defined (client-side only)
   if (typeof window !== "undefined") {
-    // Dynamically import Leaflet's icon
-    const L = require("leaflet");
-    return L.icon({
+    return icon({
       iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
       iconSize: [40, 40],
       iconAnchor: [12, 41],
@@ -176,18 +175,38 @@ export default function HybridCoursesPage() {
 
   const handleSendEmail = () => {
     setIsModalOpen(false);
+    // Here you would typically implement the actual email sending logic
   };
+
+  // Group courses by district for better organization
+  const coursesByDistrict = filteredData.reduce((acc, course) => {
+    if (!acc[course.district]) {
+      acc[course.district] = [];
+    }
+    acc[course.district].push(course);
+    return acc;
+  }, {});
 
   return (
     <div className="container mx-auto py-10 px-6">
       {/* <Navbar></Navbar> */}
       <h1 className="text-3xl font-bold mb-6 pt-24">Hybrid Courses</h1>
 
-      <div className="mb-6 h-[400px] w-full">
+      <div className="mb-6">
+        <Input
+          placeholder="Search courses..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="max-w-sm"
+          aria-label="Search courses"
+        />
+      </div>
+
+      <div className="mb-6 h-[400px] w-full rounded-lg overflow-hidden shadow-md">
         {mapReady && (
           <MapContainer
-            center={[30.67, 76.72]}
-            zoom={11}
+            center={[31.1471, 75.3412]} // Center of Punjab
+            zoom={8}
             style={{ height: "400px", width: "100%" }}
           >
             <TileLayer
@@ -201,8 +220,8 @@ export default function HybridCoursesPage() {
                 icon={customIcon()}
               >
                 <Popup>
-                  <div>
-                    <h3>{course.course}</h3>
+                  <div className="text-sm">
+                    <h3 className="font-bold text-base mb-1">{course.course}</h3>
                     <p>
                       <strong>District:</strong> {course.district}
                     </p>
@@ -225,7 +244,13 @@ export default function HybridCoursesPage() {
                       <strong>Start Time:</strong> {course.startTime}
                     </p>
                     <p>
-                      <strong>Email:</strong> {course.email}
+                      <strong>Email:</strong>{" "}
+                      <span 
+                        className="text-blue-500 cursor-pointer"
+                        onClick={() => handleEmailClick(course.email)}
+                      >
+                        {course.email}
+                      </span>
                     </p>
                   </div>
                 </Popup>
@@ -235,77 +260,83 @@ export default function HybridCoursesPage() {
         )}
       </div>
 
-      <div className="mb-6">
-        <Input
-          placeholder="Search courses..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+      {/* Display courses grouped by district */}
+      {Object.keys(coursesByDistrict).length > 0 ? (
+        Object.entries(coursesByDistrict).map(([district, courses]) => (
+          <div key={district} className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">{district} District</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => (
+                <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <CardHeader className="p-4 pb-2 bg-gray-50">
+                    <CardTitle className="text-lg font-bold line-clamp-2">
+                      {course.course}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                      <div className="flex items-center">
+                        <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.district}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.trainingPartner}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Building className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.trainingCentre}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.schemeName}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Book className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.sector}</span>
+                      </div>
+                      <div className="flex items-center col-span-2">
+                        <Briefcase className="mr-2 h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{course.course}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.startDate}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span className="truncate">{course.startTime}</span>
+                      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredData.map((course) => (
-          <Card key={course.id} className="overflow-hidden">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-lg font-bold">
-                {course.course}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div className="flex items-center">
-                  <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.district}</span>
-                </div>
-                <div className="flex items-center">
-                  <User className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.trainingPartner}</span>
-                </div>
-                <div className="flex items-center">
-                  <Building className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.trainingCentre}</span>
-                </div>
-                <div className="flex items-center">
-                  <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.schemeName}</span>
-                </div>
-                <div className="flex items-center">
-                  <Book className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.sector}</span>
-                </div>
-                <div className="flex items-center">
-                  <Briefcase className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.course}</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.startDate}</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{course.startTime}</span>
-                </div>
+                      <div className="flex items-center col-span-2">
+                        <Mail
+                          className="mr-2 h-4 w-4 text-muted-foreground cursor-pointer"
+                          onClick={() => handleEmailClick(course.email)}
+                        />
+                        <button
+                          className="truncate text-blue-500 cursor-pointer text-left hover:underline"
+                          onClick={() => handleEmailClick(course.email)}
+                          aria-label={`Email ${course.trainingCentre}`}
+                        >
+                          {course.email}
+                        </button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="text-center py-10">
+          <p className="text-lg text-gray-600">No courses match your search criteria</p>
+        </div>
+      )}
 
-                <div className="flex items-center">
-                  <Mail
-                    className="mr-2 h-4 w-4 text-muted-foreground cursor-pointer"
-                    onClick={() => handleEmailClick(course.email)}
-                  />
-                  <span
-                    className="truncate text-blue-500 cursor-pointer"
-                    onClick={() => handleEmailClick(course.email)}
-                  >
-                    {course.email}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Email Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold">New Message</h2>
@@ -313,12 +344,14 @@ export default function HybridCoursesPage() {
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded"
+                  aria-label="Minimize"
                 >
                   −
                 </button>
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded"
+                  aria-label="Close"
                 >
                   ×
                 </button>
@@ -334,6 +367,7 @@ export default function HybridCoursesPage() {
                     value={selectedEmail}
                     readOnly
                     className="flex-1 outline-none"
+                    aria-label="Recipient email"
                   />
                 </div>
                 <div className="flex items-center border-b py-2">
@@ -342,11 +376,13 @@ export default function HybridCoursesPage() {
                     type="text"
                     placeholder="Subject"
                     className="flex-1 outline-none"
+                    aria-label="Email subject"
                   />
                 </div>
                 <textarea
-                  className="w-full h-64 outline-none resize-none"
+                  className="w-full h-64 outline-none resize-none p-2 border rounded"
                   placeholder="Write your message here..."
+                  aria-label="Email message"
                 />
               </div>
             </div>
@@ -361,6 +397,7 @@ export default function HybridCoursesPage() {
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
+                aria-label="Delete draft"
               >
                 <svg
                   className="w-5 h-5"

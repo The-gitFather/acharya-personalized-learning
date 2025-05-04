@@ -2,20 +2,14 @@
 
 import { useState, useEffect } from "react";
 import {
-    ChevronDown,
     Star,
     Clock,
     Users,
     Play,
     Share2,
-    MoreVertical,
-    Box,
-    Text,
     Check,
-    LanguagesIcon,
     X,
     Square,
-    Ellipsis,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -28,22 +22,20 @@ import {
 } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-// import YoutubeSearch from "@/components/Transcripts";
 import axios from "axios";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import Groq from "groq-sdk";
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey!);
-// import { Navbar } from "@/components/navbar";
 
 const groq = new Groq({
     apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
     dangerouslyAllowBrowser: true,
 });
+
 const questionsSchema = {
     type: SchemaType.ARRAY,
     items: {
@@ -91,38 +83,34 @@ interface Question {
     correctAns: string;
 }
 
-interface YoutubeSearchProps {
+interface CourseSection {
     title: string;
+    subtopics: SubTopic[];
 }
 
-interface Question {
-    id: string;
-    question: string;
-    answer: string[];
+interface SubTopic {
+    id: number;
+    title: string;
+    completed: boolean;
 }
 
-interface QuestionsProps {
-    ques: Question[] | null;
+interface SelectedType {
+    unit: number;
+    chapter: number;
+    title: string | SubTopic;
 }
 
 export default function CoursePage() {
-    const [selected, setSelected] = useState({ unit: 1, chapter: 1, title: "" });
-    const [ques, setques] = useState([]);
     const searchParams = useSearchParams();
-    // console.log("search: ", searchParams);
-    const data: any = searchParams.get("data");
+    const data = searchParams.get("data");
     const title = searchParams.get("title");
-    const [selectedTitle, setSelectedTitle] = useState("");
-    const [dubbedVideo, setDubbedVideo] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState("");
-    const [error, setError] = useState("");
+    // Using dubbedVideo but removing the unused setter and selectedTitle
+    const [dubbedVideo] = useState("");
     const [selectedAnswers, setSelectedAnswers] = useState<
         Record<string, string>
     >({});
     const [isLocked, setIsLocked] = useState<Record<string, boolean>>({});
     const router = useRouter();
-    // console.log(data);
 
     const handleAnswerSelection = (
         questionId: string,
@@ -143,45 +131,50 @@ export default function CoursePage() {
         }
     };
 
-    const [course, setCourse] = useState([]);
+    const [course, setCourse] = useState<CourseSection[]>([]);
+    const [ques, setQues] = useState<Question[]>([]);
 
     useEffect(() => {
         try {
-            const parsedData = JSON.parse(data);
-            const modifiedData = parsedData.map((topic: { subtopics: any[] }) => {
-                return {
-                    ...topic,
-                    subtopics: topic.subtopics.map((subtopic) => ({
-                        ...subtopic,
-                        completed: false,
-                    })),
-                };
-            });
-            // console.log(modifiedData);
+            if (data) {
+                const parsedData = JSON.parse(data);
+                const modifiedData = parsedData.map((topic: { subtopics: SubTopic[] }) => {
+                    return {
+                        ...topic,
+                        subtopics: topic.subtopics.map((subtopic) => ({
+                            ...subtopic,
+                            completed: false,
+                        })),
+                    };
+                });
 
-            setCourse(modifiedData);
-            if (parsedData.length > 0 && parsedData[0].subtopics.length > 0) {
-                setSelected((prevSelected) => ({
-                    ...prevSelected,
-                    title: parsedData[0].subtopics[0],
-                }));
+                setCourse(modifiedData);
+                if (parsedData.length > 0 && parsedData[0].subtopics.length > 0) {
+                    setSelected({
+                        unit: 1,
+                        chapter: 1,
+                        title: parsedData[0].subtopics[0],
+                    });
+                }
             }
         } catch (error) {
             console.error("Error parsing JSON:", error);
         }
     }, [data]);
 
-    const handleSubtopicClick = (unit: any, chapter: any, title: any) => {
+    // This state is used in handleSubtopicClick and set in the JSX
+    const [, setSelected] = useState<SelectedType>({ unit: 1, chapter: 1, title: "" });
+
+    const handleSubtopicClick = (unit: number, chapter: number, title: SubTopic) => {
         setSelected({ unit, chapter, title });
     };
 
     const [videos, setVideos] = useState<Video[]>([]);
     const [videoSummary, setVideoSummary] = useState<string>("");
-    const [questions, setQuestions] = useState<Question[]>([]);
 
     const API_KEY: string = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY as string;
 
-    const handleSearch = async (titleSelected: any): Promise<void> => {
+    const handleSearch = async (titleSelected: SubTopic): Promise<void> => {
         console.log(titleSelected);
 
         try {
@@ -191,14 +184,11 @@ export default function CoursePage() {
             );
 
             const items: Video[] = response.data.items;
-            console.log("Videos: ", videos);
+            console.log("Videos: ", items);
             setVideos(items);
 
             if (items.length > 0) {
-                // console.log(items);
-                const videoId = items[0].id.videoId;
-                // const videoTitle = items[0]
-                const summary = await summarizeVideo(videoId);
+                const summary = await summarizeVideo();
                 setVideoSummary(summary);
             }
         } catch (error) {
@@ -206,7 +196,8 @@ export default function CoursePage() {
         }
     };
 
-    const summarizeVideo = async (videoId: string): Promise<string> => {
+    // This function doesn't actually use the videoId parameter, so we can simplify it
+    const summarizeVideo = async (): Promise<string> => {
         try {
             // Generate a summary using Groq's chat completion API
             const chatCompletion = await groq.chat.completions.create({
@@ -225,18 +216,21 @@ export default function CoursePage() {
             });
 
             // Extract the generated summary from the response
-            const summary: any = chatCompletion.choices[0].message.content;
+            const summary = chatCompletion.choices[0].message.content;
             console.log("Summary:", summary);
 
             // Generate questions and answers based on the summary
-            await generateQuestionsAndAnswers(summary);
+            if (summary) {
+                await generateQuestionsAndAnswers(summary);
+            }
 
-            return summary;
+            return summary || "";
         } catch (error) {
             console.error("Error generating summary:", error);
             return "";
         }
     };
+
     const generateQuestionsAndAnswers = async (
         summary: string
     ): Promise<void> => {
@@ -258,45 +252,9 @@ export default function CoursePage() {
             const parsedResponse = JSON.parse(text) as Question[];
 
             console.log("Generated questions:", parsedResponse);
-            setques(parsedResponse as any);
+            setQues(parsedResponse);
         } catch (error) {
             console.error("Error generating questions and answers:", error);
-        }
-    };
-
-    const handlevideoDubbing = async (url: string) => {
-        const messages = [
-            "Transcribing video",
-            "Translating to Punjabi",
-            "Converting Text-to-Speech",
-            "Merging Audios",
-            "Replacing original video with dubbed audio",
-        ];
-
-        setLoading(true);
-        let messageIndex = 0;
-
-        const messageInterval = setInterval(() => {
-            setLoadingMessage(messages[messageIndex]);
-            messageIndex = (messageIndex + 1) % messages.length;
-        }, 3000);
-
-        try {
-            const response = await axios.post("http://localhost:5000/process-video", {
-                url: url,
-            });
-
-            if (response.data.success) {
-                setDubbedVideo(response.data.video_url);
-            } else {
-                alert("Failed to process the video.");
-            }
-        } catch (error) {
-            alert("An error occurred while processing the video.");
-        } finally {
-            clearInterval(messageInterval);
-            setLoading(false);
-            setLoadingMessage("");
         }
     };
 
@@ -381,11 +339,11 @@ export default function CoursePage() {
 
                                     <TabsContent value="q&a" className="p-8">
                                         <div className="space-y-4">
-                                            {Object.values(ques).map((question: any) => (
+                                            {ques.map((question) => (
                                                 <Card key={question.id} className="p-6 rounded-2xl border-purple-200 bg-white shadow-lg">
                                                     <h3 className="text-lg font-bold text-purple-800">{question.question}</h3>
                                                     <div className="mt-4 space-y-3">
-                                                        {question.answer.map((option: any, index: any) => {
+                                                        {question.answer.map((option, index) => {
                                                             const isSelected = selectedAnswers[question.id] === option;
                                                             const isCorrect = isSelected && option === question.correctAns;
                                                             return (
@@ -431,14 +389,14 @@ export default function CoursePage() {
                     </div>
                     <ScrollArea className="h-[calc(100vh-100px)]">
                         <Accordion type="single" collapsible className="w-full">
-                            {course.map((section: any, index: number) => (
+                            {course.map((section, index) => (
                                 <AccordionItem key={index} value={`section-${index}`}>
                                     <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-purple-50 text-purple-800">
                                         <div className="flex flex-col items-start">
                                             <div className="font-semibold">{section.title}</div>
                                             <div className="text-sm text-purple-600">
                                                 {section.subtopics.reduce(
-                                                    (count: number, subtopic: { completed: boolean }) =>
+                                                    (count, subtopic) =>
                                                         subtopic.completed ? count + 1 : count,
                                                     0
                                                 )}
@@ -448,18 +406,17 @@ export default function CoursePage() {
                                     </AccordionTrigger>
                                     <AccordionContent className="bg-purple-50">
                                         <div className="space-y-1 p-2">
-                                            {section.subtopics.map((lecture: any, lectureIndex: number) => (
+                                            {section.subtopics.map((lecture, lectureIndex) => (
                                                 <button
                                                     key={lectureIndex}
                                                     className="w-full px-4 py-3 text-left hover:bg-white rounded-xl flex items-center gap-3 transition-all"
                                                     onClick={() => {
                                                         handleSubtopicClick(lecture.id, lectureIndex + 1, lecture);
                                                         handleSearch(lecture);
-                                                        setSelectedTitle(lecture.title);
-                                                        setCourse((prevCourse: any) =>
-                                                            prevCourse.map((topic: any) => ({
+                                                        setCourse((prevCourse) =>
+                                                            prevCourse.map((topic) => ({
                                                                 ...topic,
-                                                                subtopics: topic.subtopics.map((subtopic: any) =>
+                                                                subtopics: topic.subtopics.map((subtopic) =>
                                                                     subtopic.id === lecture.id
                                                                         ? { ...subtopic, completed: true }
                                                                         : subtopic
@@ -486,11 +443,11 @@ export default function CoursePage() {
                         </Accordion>
 
                         <div className="w-full flex justify-center p-8">
-                            {course.every((section: any) =>
-                                section.subtopics.every((subtopic: any) => subtopic.completed)
+                            {course.every((section) =>
+                                section.subtopics.every((subtopic) => subtopic.completed)
                             ) ? (
                                 <Button
-                                    onClick={() => handleCertify()}
+                                    onClick={handleCertify}
                                     className="px-8 py-6 text-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg transition-all"
                                 >
                                     Get Your Certificate ✨

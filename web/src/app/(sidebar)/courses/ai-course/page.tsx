@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,21 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai"
 import { useRouter } from "next/navigation"
 import { FaPlus, FaTrash, FaChevronRight, FaLightbulb, FaHeartbeat, FaGraduationCap, FaCalculator, FaVideo, FaBook } from "react-icons/fa"
 import { useAuth } from "@/context/AuthContext"
+
+// Define interfaces for our data structures
+interface InputField {
+  value: string;
+}
+
+interface RecommendedTopic {
+  title: string;
+  subtopics: string[];
+  icon: React.ReactNode | string;
+}
+
+interface IconMap {
+  [key: string]: React.ReactNode;
+}
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY as string);
 
@@ -94,20 +109,20 @@ const recommendedTopicsSchema = {
 export default function AIResearchPlanner() {
   const { user } = useAuth()
   const [title, setTitle] = useState("")
-  const [inputFields, setInputFields] = useState([{ value: "" }, { value: "" }])
+  const [inputFields, setInputFields] = useState<InputField[]>([{ value: "" }, { value: "" }])
   const router = useRouter()
-  const [recommendedTopics, setRecommendedTopics] = useState<any>([])
+  const [recommendedTopics, setRecommendedTopics] = useState<RecommendedTopic[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Define the icon mapping
-  const iconMap = {
+  // Use useMemo to create a stable iconMap reference
+  const iconMap = useMemo<IconMap>(() => ({
     FaLightbulb: <FaLightbulb className="w-6 h-6 text-purple-500" />,
     FaGraduationCap: <FaGraduationCap className="w-6 h-6 text-purple-500" />,
     FaHeartbeat: <FaHeartbeat className="w-6 h-6 text-purple-500" />,
     FaCalculator: <FaCalculator className="w-6 h-6 text-purple-500" />,
     FaVideo: <FaVideo className="w-6 h-6 text-purple-500" />,
     FaBook: <FaBook className="w-6 h-6 text-purple-500" />,
-  }
+  }), [])
 
   useEffect(() => {
     const generateRecommendedTopics = async () => {
@@ -140,10 +155,14 @@ export default function AIResearchPlanner() {
         `
 
         const result = await model.generateContent(prompt)
-        const response = JSON.parse(result.response.text())
+        const response = JSON.parse(result.response.text()) as Array<{
+          title: string;
+          subtopics: string[];
+          icon: string;
+        }>
 
         // Map string icon names to actual React components
-        const formattedTopics = response.map((topic: any) => ({
+        const formattedTopics = response.map((topic) => ({
           ...topic,
           icon: iconMap[topic.icon]
         }))
@@ -175,7 +194,7 @@ export default function AIResearchPlanner() {
     }
 
     generateRecommendedTopics()
-  }, [user?.onboardingAnswers])
+  }, [user?.onboardingAnswers, iconMap]) // iconMap is now stable
 
   const addSection = () => {
     setInputFields([...inputFields, { value: "" }])
@@ -215,9 +234,9 @@ export default function AIResearchPlanner() {
     }
   }
 
-  const handleCardClick = (topic: any) => {
+  const handleCardClick = (topic: RecommendedTopic) => {
     setTitle(topic.title)
-    const newInputFields = topic.subtopics.map((subtopic: any) => ({
+    const newInputFields = topic.subtopics.map((subtopic: string) => ({
       value: subtopic,
     }))
     setInputFields(newInputFields.length > 1 ? newInputFields : [...newInputFields, { value: "" }])
@@ -299,7 +318,7 @@ export default function AIResearchPlanner() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
             </div>
           ) : (
-            recommendedTopics.map((topic: any, index: any) => (
+            recommendedTopics.map((topic, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: 20 }}
@@ -312,13 +331,13 @@ export default function AIResearchPlanner() {
                 >
                   <CardHeader className="bg-gradient-to-r from-purple-400 to-indigo-500 rounded-t-xl p-6">
                     <CardTitle className="text-2xl font-bold text-white flex items-center">
-                      {/* {topic.icon} */}
+                      {topic.icon}
                       <span className="ml-2">{topic.title}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
                     <ul className="space-y-2">
-                      {topic.subtopics.map((t: any, i: any) => (
+                      {topic.subtopics.map((t, i) => (
                         <li key={i} className="flex items-center text-purple-900 text-lg">
                           <FaChevronRight className="w-4 h-4 mr-2 text-purple-500" />
                           {t}

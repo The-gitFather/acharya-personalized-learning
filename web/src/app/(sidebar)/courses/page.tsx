@@ -4,6 +4,15 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { GraduationCap, Laptop, Globe } from "lucide-react"
 import { useEffect, useState } from 'react'
+import { LucideIcon } from 'lucide-react' // if using lucide-react (which you are)
+
+type CourseCardProps = {
+  title: string
+  icon: LucideIcon
+  href: string
+  description: string
+  imageSrc: string
+}
 
 const FloatingShape = ({ index }: { index: number }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 })
@@ -38,7 +47,7 @@ const FloatingShape = ({ index }: { index: number }) => {
   )
 }
 
-const CourseCard = ({ title, icon: Icon, href, description, imageSrc }: any) => (
+const CourseCard = ({ title, icon: Icon, href, description, imageSrc }: CourseCardProps) => (
   <Link href={href} className="block">
     <motion.div
       whileHover={{ y: -8 }}

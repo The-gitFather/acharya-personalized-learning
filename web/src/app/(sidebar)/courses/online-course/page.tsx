@@ -6,14 +6,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import Image from "next/image";
+
+// Define types for our data
+interface Course {
+  title: string;
+  snippet: string;
+  link: string;
+  source: string;
+  favicon?: string;
+  position?: number;
+  cost: string;
+}
+
+interface Skill {
+  title: string;
+  subtopics: string[];
+}
 
 // Utility function to randomly assign cost values
-function getRandomCost() {
+function getRandomCost(): string {
   const costs = ["₹ Low", "₹ Medium", "₹ High"];
   return costs[Math.floor(Math.random() * costs.length)];
 }
 
-async function searchCourses(query: string) {
+async function searchCourses(query: string): Promise<{ organic_results: Omit<Course, 'cost'>[] }> {
   const url = `/api/course?query=${query}`;
 
   const res = await fetch(url);
@@ -23,13 +40,13 @@ async function searchCourses(query: string) {
   return res.json();
 }
 
-function CourseCard({ course }: { course: any }) {
+function CourseCard({ course }: { course: Course }) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="space-y-2 p-4">
         <div className="flex items-center space-x-2">
           {course.favicon && (
-            <img
+            <Image
               src={course.favicon}
               alt={course.source}
               width={16}
@@ -84,7 +101,7 @@ function SearchForm({ onSearch }: { onSearch: (query: string) => void }) {
 }
 
 function RecommendedSearches({ onSearch }: { onSearch: (query: string) => void }) {
-  const [recommendedSkills, setRecommendedSkills] = useState([
+  const recommendedSkills: Skill[] = [
     {
       title: "Cloud Computing",
       subtopics: ["AWS", "Docker"],
@@ -100,7 +117,7 @@ function RecommendedSearches({ onSearch }: { onSearch: (query: string) => void }
       title: "DevOps",
       subtopics: ["Introduction to DevOps", "CI/CD Pipelines"],
     },
-  ]);
+  ];
 
   const gradients = [
     "from-purple-500 to-pink-500",
@@ -132,7 +149,7 @@ function RecommendedSearches({ onSearch }: { onSearch: (query: string) => void }
 }
 
 export default function StructuredCoursesPage() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -141,13 +158,13 @@ export default function StructuredCoursesPage() {
     setError(null);
     try {
       const data = await searchCourses(query);
-      const coursesWithCost = (data.organic_results || []).map((course: any) => ({
+      const coursesWithCost = (data.organic_results || []).map((course) => ({
         ...course,
         cost: getRandomCost(),
       }));
       setCourses(coursesWithCost);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -176,7 +193,7 @@ export default function StructuredCoursesPage() {
         <h2 className="text-xl font-semibold mb-4"> Courses based on Search</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {!loading &&
-            courses.map((course: any) => <CourseCard key={course.position} course={course} />)}
+            courses.map((course) => <CourseCard key={course.position || course.link} course={course} />)}
         </div>
       </main>
     </div>
